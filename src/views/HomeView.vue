@@ -1,9 +1,9 @@
 <template>
 
   <div class="container-fluid">
-    <h2 class="text-center">The Weather App</h2>
+    <h2 class="text-center">Weather App</h2>
     <div class="search-box">
-      <input type="text" class="form-control" placeholder="Search Location" v-model="search" @keyup="onSearch()">
+      <input type="text" class="form-control" placeholder="Search Location" v-model="search" @keyup.enter="onSearch()">
       <ul v-if="this.locations.length > 0" class="list-group" >
         <li v-for="single in this.locations" :key="single" @click="onGetWeather(single)" class="list-group-item">{{ single.name }} From {{ single.region}}</li>
       </ul>
@@ -87,6 +87,7 @@
 
             <div class="row">
               <div class="col-5">
+                <label style="display:block">Celsius</label>
                 <input type="number" placeholder="Celsius" v-model.number="celsius" @keyup="onChangeTemperature(1)">
               </div>
 
@@ -95,6 +96,7 @@
               </div>
 
               <div class="col-5">
+                <label style="display:block">Fahrenheit</label>
                 <input type="number" placeholder="Fahrenheit" v-model.number="fahrenheit" @keyup="onChangeTemperature(0)">
               </div>
             </div>
@@ -132,9 +134,9 @@ export default {
   methods: {
     onChangeTemperature (isCelsius = 1) {
       if (isCelsius === 1) {
-        this.fahrenheit = ((this.celsius * 9 / 5) + 32).toFixed(2)
+        this.fahrenheit = ((this.celsius * 9 / 5) + 32).toFixed(1)
       } else {
-        this.celsius = ((this.fahrenheit - 32) * 5 / 9).toFixed(2)
+        this.celsius = ((this.fahrenheit - 32) * 5 / 9).toFixed(1)
       }
     },
     onSearch () {
@@ -153,7 +155,8 @@ export default {
       }
     },
     onGetLocation () {
-      axios.get('http://api.positionstack.com/v1/forward?access_key=6507a9bcf2efe0715e34539c6c7bdb02&query=' + this.search)
+      const apiURL = 'http://localhost:3000/get/location'
+      axios.get(`${apiURL}?query=${this.search}`)
         .then(response => {
           console.log(response.data.data)
           if (response.data.data.length > 0) {
@@ -172,11 +175,17 @@ export default {
     },
     onGetWeather (obj) {
       this.selectedLocation = obj
-      axios.get('https://api.openweathermap.org/data/2.5/forecast?lat=' + this.selectedLocation.latitude + '&lon=' + this.selectedLocation.longitude + '&units=metric&appid=47d45b39828056463f147950bf790b81')
+
+      const apiURL = 'http://localhost:3000/get/weather'
+      const lat = this.selectedLocation.latitude
+      const lon = this.selectedLocation.longitude
+
+      axios.get(`${apiURL}?lat=${lat}&lon=${lon}&units=metric`)
         .then(response => {
           console.log(response.data.list)
           this.search = ''
           this.locations = []
+          this.fiveDayForecastArray = []
           this.weatherArray = response.data.list
           this.todayWeather = this.weatherArray[0]
           const tempDays = [0, 9, 17, 25, 33]
